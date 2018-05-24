@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 //complete your code here
 app.get('/users', function (req, res){
     console.log('works');
-})
+});
 
 
 var port = 3000;

@@ -12,10 +12,10 @@ var poolConfig = {
 };
 
 var connectionConfig = { //תחליף פה את היוזר והסיסמה
-    userName: 'my-ship-server',
-    password: 'abCD1234',
-    server: 'my-shop-server.database.windows.net',
-    options: { encrypt: true, database: 'SHOP_SERVER' }
+    userName: 'shakedey',
+    password: 'aA123456',
+    server: 'shakedstudy.database.windows.net',
+    options: { encrypt: true, database: 'mySampleDatabase' }
 };
 
 //create the pool
