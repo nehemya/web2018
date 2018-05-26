@@ -13,6 +13,17 @@ router.use(bodyParser.json());
 router.use(cors());
 
 
+/* get poi*/
+router.get('/:param', function (req, res) {
+
+    const param = req.params;
+    if (param === "all") {
+        // language=SQLite
+        const query = `SELECT * FROM [POI]`;
+    }
+})
+
+
 
 
 
