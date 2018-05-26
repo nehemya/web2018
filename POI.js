@@ -12,7 +12,22 @@ router.use(bodyParser.urlencoded({extended: true}));
 router.use(bodyParser.json());
 router.use(cors());
 
-
+router.get('/getAllPOI', function (req,res) {
+    //language=SQLite
+    const query = `SELECT * FROM [POI]`;
+    DButilsAzure.execQuery(query)
+        .then(function (ans) {
+            let result=[];
+            for(let i=0;i<ans.length;i++){
+                result[i]= {"PoiName" : ans[i].PoiName , "PoiPic" : ans[i].PoiPic,
+                    "Category":ans[i].Category, "Rating":ans[i].Rating};
+            }
+            res.send(JSON.stringify(result));
+        })
+        .catch(function (err) {
+            console.log('connection fail')
+        })
+})
 
 
 
