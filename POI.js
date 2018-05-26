@@ -36,7 +36,7 @@ router.get('/getAllPOI', function (req,res) {
         DButilsAzure.execQuery(query)
             .then(function (ans) {
                 let result = ansToJson(ans);
-                res.send(JSON.stringify(result));
+                res.send(result);
             })
             .catch(function (err) {
                 console.log('connection fail')
@@ -51,20 +51,43 @@ router.get('/getSaved', function (req, res) {
     {
         res.sendStatus(401);
     }
-    else {
+    else
+    {
         const username = req.decoded.payload.UserName;
         //language=SQLite
         const query = `SELECT * FROM [POI] WHERE [PoiName] IN (SELECT [poi_name] FROM [SavePOI] WHERE username = '${username}')`;
         DButilsAzure.execQuery(query)
             .then(function (ans) {
                 let result = ansToJson(ans);
-                res.send(JSON.stringify(result));
+                res.send(result)
             })
             .catch(function (err) {
                 console.log('connection fail')
             })
     }
 });
+
+router.post('/savePoi', function (req, res) {
+
+    if (req.decoded === undefined)
+    {
+        res.sendStatus(401);
+    }
+    else
+    {
+        const username = req.decoded.payload.UserName;
+        const poiName = req.body.poiName;
+        //language=SQLite
+        const query = `INSERT INTO [SavePOI] VALUES ('${username}', '${poiName}')`;
+        DButilsAzure.execQuery(query)
+            .then(function () {
+                res.sendStatus(200);
+            })
+            .catch(function () {
+                res.send('Failed');
+            })
+    }
+})
 
 
 
