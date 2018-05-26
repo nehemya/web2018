@@ -11,7 +11,7 @@ var poolConfig = {
     log: true
 };
 
-var connectionConfig = { //תחליף פה את היוזר והסיסמה
+var connectionConfig = {
     userName: 'shakedey',
     password: 'aA123456',
     server: 'shakedstudy.database.windows.net',
