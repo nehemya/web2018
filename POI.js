@@ -55,7 +55,7 @@ router.use('/', function (req, res, next) {
 });
 
 
-router.get("/getAllPOI", function (req, res) {
+router.get("/", function (req, res) {
 
     //language=SQLite
     const query = `SELECT *
@@ -73,7 +73,6 @@ router.get("/getAllPOI", function (req, res) {
 });
 
 router.get('/save', function (req, res) {
-
 
     let pois = [];
     let sorted = [];
@@ -107,7 +106,6 @@ router.get('/save', function (req, res) {
         });
 
 
-
 });
 
 router.post('/save', function (req, res) {
@@ -117,31 +115,38 @@ router.post('/save', function (req, res) {
     let pois = req.body.pois;
     let promises = [];
 
-    //language=SQLite
-    const del = `DELETE FROM [SavePoi] WHERE username = '${username}'`;
-    DButilsAzure.execQuery(del)
+    for (let i = 0; i < pois.length; i++) {
+        let poiName = pois[i].poiName;
+        let place = pois[i].place;
+        //language=SQLite
+        let insert = `update [SavePOI] set place = '${place}' where username = '${username}' and poi_name = '${poiName}'`;
+        promises.push(DButilsAzure.execQuery(insert))
+    }
+
+    Promise.all(promises)
         .then(function () {
-            for (let i = 0; i < pois.length; i++) {
-                let poiName = pois[i].poiName;
-                let place = pois[i].place;
-                //language=SQLite
-                let insert = `INSERT INTO [SavePOI] VALUES ('${username}', '${poiName}', '${place}')`;
-                promises.push(DButilsAzure.execQuery(insert))
-            }
-
-            Promise.all(promises)
-                .then(function () {
-                    res.sendStatus(200)
-                })
-                .catch(function (err) {
-                    res.send(err.message);
-                })
-
+            res.sendStatus(200)
         })
         .catch(function (err) {
             res.send(err.message);
         })
 
+});
+
+
+router.post('/save/:poi', function (req, res) {
+    const username = req.decoded.payload.UserName;
+    let poiName = req.params;
+    let date = new Date().toISOString();
+    //language=SQLite
+    const query = `insert into [SavePOI] ([username], [poi_name], [date]) values ('${username}', '${poiName}', '${date}')`;
+    DButilsAzure.execQuery(query)
+        .then(function () {
+            res.sendStatus(200)
+        })
+        .catch(function (err) {
+            res.send(err.message);
+        })
 
 });
 
@@ -263,7 +268,6 @@ router.post('/rank', function (req, res) {
 
 
 });
-
 
 
 module.exports = router;
