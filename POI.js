@@ -24,26 +24,14 @@ function ansToJson(ans) {
     return result;
 }
 
-function sort(ans) {
-    let sorted = [];
-    for (let count = 0; count < ans.length; count++) {
-        let index = ans[count].place;
-        sorted[index - 1] = ans[count];
-    }
-    return sorted;
-
-}
-
-
-function getPlace(ans, poiName) {
+function getNext(ans, poiName) {
     for (let i = 0; i < ans.length; i++) {
-        if (ans[i].poi_name !== poiName) {
-            continue;
+        if (poiName === ans[i].PoiName) {
+            return ans[i];
         }
-        return ans[i].place;
     }
-    return -1;
 }
+
 
 router.use('/', function (req, res, next) {
     if (undefined === req.decoded) {
@@ -55,22 +43,9 @@ router.use('/', function (req, res, next) {
 });
 
 
-router.get("/", function (req, res) {
-
-    //language=SQLite
-    const query = `SELECT *
-                   FROM [POI]`;
-    DButilsAzure.execQuery(query)
-        .then(function (ans) {
-            let result = ansToJson(ans);
-            res.send(result);
-        })
-        .catch(function (err) {
-            console.log(err.message);
-        })
-
-
-});
+/****************************************************************
+ *                      Save module
+ ***************************************************************/
 
 router.get('/save', function (req, res) {
 
@@ -87,11 +62,13 @@ router.get('/save', function (req, res) {
             const querySort = `SELECT * FROM [SavePOI] WHERE username = '${username}'`;
             DButilsAzure.execQuery(querySort)
                 .then(function (ans) {
-                    sorted = sort(ans);
-                    let result = [];
-                    for (let i = 0; i < pois.length; i++) {
-                        let place = getPlace(sorted, pois[i].PoiName);
-                        result[place - 1] = pois[i];
+                    sorted = ans.sort(function (a, b) {
+                        return (a.place > b.place) ? 1 : (a.place < b.place) ? -1 : 0;
+                    });
+                    let result = [sorted.length];
+                    for (let i = 0; i < sorted.length; i++) {
+                        let poi = getNext(pois, sorted[i].poi_name);
+                        result[i] = poi;
                     }
                     res.send(result)
 
@@ -133,6 +110,35 @@ router.post('/save', function (req, res) {
 
 });
 
+router.delete('/save', function (req, res) {
+
+    const poiName = req.body.PoiName;
+    const username = req.decoded.payload.UserName;
+    //language=SQLite
+    const query = `DELETE FROM [SavePOI] WHERE username = '${username}' AND poi_name = '${poiName}'`;
+    DButilsAzure.execQuery(query)
+        .then(function () {
+            res.sendStatus(200);
+        })
+        .catch(function (err) {
+            res.send(err.message);
+        })
+
+});
+
+router.delete('/save/deleteUserOrder', function (req, res) {
+    const username = req.decoded.payload.UserName;
+    //language=SQLite
+    const query = `delete from [SavePOI] where username = '${username}'`;
+    DButilsAzure.execQuery(query)
+        .then(function () {
+            res.sendStatus(200)
+        })
+        .catch(function (err) {
+            res.send(err.message)
+        })
+});
+
 
 router.post('/save/:poi', function (req, res) {
     const username = req.decoded.payload.UserName;
@@ -150,13 +156,18 @@ router.post('/save/:poi', function (req, res) {
 
 });
 
+/****************************************************************
+ *                      Review module
+ ***************************************************************/
 
-router.delete('/save', function (req, res) {
+router.put('/review', function (req, res) {
 
-    const poiName = req.body.PoiName;
     const username = req.decoded.payload.UserName;
+    const poiName = req.body.PoiName;
+    const review = req.body.review;
+
     //language=SQLite
-    const query = `DELETE FROM [SavePOI] WHERE username = '${username}' AND poi_name = '${poiName}'`;
+    const query = `update [PoiReview] set review = '${review}' where UserName = '${username}' and PoiName = '${poiName}'`;
     DButilsAzure.execQuery(query)
         .then(function () {
             res.sendStatus(200);
@@ -164,8 +175,8 @@ router.delete('/save', function (req, res) {
         .catch(function (err) {
             res.send(err.message);
         })
-
 });
+
 
 router.post('/review/:poiName', function (req, res) {
 
@@ -185,49 +196,10 @@ router.post('/review/:poiName', function (req, res) {
 
 });
 
-router.put('/review', function (req, res) {
 
-    const username = req.decoded.payload.UserName;
-    const poiName = req.body.PoiName;
-    const review = req.body.review;
-
-    //language=SQLite
-    const query = `update [PoiReview] set review = '${review}' where UserName = '${username}' and PoiName = '${poiName}'`;
-    DButilsAzure.execQuery(query)
-        .then(function () {
-            res.sendStatus(200);
-        })
-        .catch(function (err) {
-            res.send(err.message);
-        })
-});
-
-router.get('/:poiName', function (req, res) {
-
-    const poiName = req.params;
-    //language=SQLite
-    const query = `select * from [PoiInfo] where PoiName = '${poiName}'`;
-    DButilsAzure.execQuery(query)
-        .then(function (ans) {
-            res.send(ans)
-        })
-        .catch(function (err) {
-            res.send(err.message);
-        })
-});
-
-router.delete('/save/deleteUserOrder', function (req, res) {
-    const username = req.decoded.payload.UserName;
-    //language=SQLite
-    const query = `delete from [SavePOI] where username = '${username}'`;
-    DButilsAzure.execQuery(query)
-        .then(function () {
-            res.sendStatus(200)
-        })
-        .catch(function (err) {
-            res.send(err.message)
-        })
-});
+/****************************************************************
+ *                      Rank module
+ ***************************************************************/
 
 router.post('/rank', function (req, res) {
     const username = req.decoded.payload.UserName;
@@ -267,6 +239,122 @@ router.post('/rank', function (req, res) {
         })
 
 
+});
+
+/****************************************************************
+ *                      Get module
+ ***************************************************************/
+
+router.get("/", function (req, res) {
+
+    //language=SQLite
+    const query = `SELECT *
+                   FROM [POI]`;
+    DButilsAzure.execQuery(query)
+        .then(function (ans) {
+            let result = ansToJson(ans);
+            res.send(result);
+        })
+        .catch(function (err) {
+            console.log(err.message);
+        })
+
+
+});
+
+
+router.get('/userLast2', function (req, res) {
+
+    const username = req.decoded.payload.UserName;
+    //language=SQLite
+    const query = `select [PoiName], [PoiPic], [Category], [Rating], [numOfRanks] from [POI] as p join [SavePOI] as s on p.PoiName = s.poi_name where s.username = '${username}' order by s.date desc`;
+    DButilsAzure.execQuery(query)
+        .then(function (ans) {
+            if (ans.length <= 2) {
+                res.send(ans);
+            }
+            else {
+                let result = [ans[0], ans[1]];
+                res.send(result);
+            }
+
+        })
+        .catch(function (err) {
+            res.send(err.message);
+        })
+
+});
+
+router.get('/category', function (req, res) {
+    const username = req.decoded.payload.UserName;
+    //language=SQLite
+    const getCategoryQuery = `select [FirstCategory], [SecondCategory] from [Users] where [Username] = '${username}'`;
+    DButilsAzure.execQuery(getCategoryQuery)
+        .then(function (ans) {
+            let result = [];
+            const first = ans[0];
+            const second = ans[1];
+            //language=SQLite
+            const fq = `select * from [POI] where Category = '${first}' order by [numOfRanks] desc`;
+            //language=SQLite
+            const sq = `select * from [POI] where Category = '${second}' order by [numOfRanks] desc`;
+            DButilsAzure.execQuery(fq)
+                .then(function (ans)
+                {
+                    if (ans.length >= 1)
+                    {
+                        result.push(ans[0]);
+                        //language=SQLite
+
+                        DButilsAzure.execQuery(sq)
+                            .then(function (ans)
+                            {
+                                if (ans.length >= 1)
+                                {
+                                    result.push(ans[0]);
+
+                                }
+                                res.send(result);
+                            })
+                            .catch(function (err) {
+                                res.send(err.message);
+                            })
+                    }
+                    else
+                    {
+                        DButilsAzure.execQuery(sq)
+                            .then(function (ans)
+                            {
+                                if (ans.length >= 1)
+                                {
+                                    result.push(ans[0]);
+
+                                }
+                                res.send(result);
+                            })
+                            .catch(function (err) {
+                                res.send(err.message);
+                            })
+                    }
+                })
+                .catch(function (err) {
+                    res.send(err.message);
+                })
+        })
+});
+
+router.get('/:poiName', function (req, res) {
+
+    const poiName = req.params;
+    //language=SQLite
+    const query = `select * from [PoiInfo] where PoiName = '${poiName}'`;
+    DButilsAzure.execQuery(query)
+        .then(function (ans) {
+            res.send(ans)
+        })
+        .catch(function (err) {
+            res.send(err.message);
+        })
 });
 
 
