@@ -13,17 +13,6 @@ router.use(bodyParser.json());
 router.use(cors());
 
 
-function ansToJson(ans) {
-    let result = [];
-    for (let i = 0; i < ans.length; i++) {
-        result[i] = {
-            "PoiName": ans[i].PoiName, "PoiPic": ans[i].PoiPic,
-            "Category": ans[i].Category, "Rating": ans[i].Rating
-        };
-    }
-    return result;
-}
-
 function getNext(ans, poiName) {
     for (let i = 0; i < ans.length; i++) {
         if (poiName === ans[i].PoiName) {
@@ -32,7 +21,65 @@ function getNext(ans, poiName) {
     }
 }
 
+router.get('/popular', function (req, res) {
+    //language=SQLite
+    const query = 'select * from [POI] order by [numOfRanks] desc';
+    DButilsAzure.execQuery(query)
+        .then(function (ans) {
+            let result = [];
+            for (let i = 0; i < 3 && i < ans.length; i++)
+            {
+                result.push(ans[i]);
+            }
 
+            res.send(result);
+        })
+        .catch(function (err) {
+            res.send(err.message);
+        })
+});
+
+router.get('/', function (req, res) {
+
+    const poiName = req.body.poiName;
+    if ('All' === poiName)
+    {
+        //language=SQLite
+        const query = "select * from [POI]";
+        DButilsAzure.execQuery(query)
+            .then(function (ans) {
+                res.send(ans);
+            })
+            .catch(function (err)
+            {
+                res.send(err.message);
+            })
+    }
+    else
+    {
+        //language=SQLite
+        const query = `select * from [PoiInfo] where PoiName = '${poiName}'`;
+        DButilsAzure.execQuery(query)
+            .then(function (ans) {
+                if (ans.length > 0)
+                {
+                    res.send(ans);
+                }
+                else
+                {
+                    res.send("We couldn't find the POI");
+                }
+            })
+            .catch(function (err) {
+                res.send(err.message);
+            })
+    }
+
+});
+
+/****************************************************************
+ *                      Use module
+ ***************************************************************/
 router.use('/', function (req, res, next) {
     if (undefined === req.decoded) {
         res.sendStatus(498)
@@ -67,8 +114,7 @@ router.get('/save', function (req, res) {
                     });
                     let result = [sorted.length];
                     for (let i = 0; i < sorted.length; i++) {
-                        let poi = getNext(pois, sorted[i].poi_name);
-                        result[i] = poi;
+                        result[i] = getNext(pois, sorted[i].poi_name);
                     }
                     res.send(result)
 
@@ -85,8 +131,32 @@ router.get('/save', function (req, res) {
 
 });
 
-router.post('/save', function (req, res) {
+router.get('/save/userLast2', function (req, res) {
 
+    const username = req.decoded.payload.UserName;
+    //language=SQLite
+    const query = `select [PoiName], [PoiPic], [Category], [Rating], [numOfRanks] from [POI] as p join [SavePOI] as s on p.PoiName = s.poi_name where s.username = '${username}' order by s.date desc`;
+    DButilsAzure.execQuery(query)
+        .then(function (ans) {
+            if (ans.length === 0) {
+                res.send("you didn't save any POI");
+            }
+            else if (ans.length <= 2) {
+                res.send(ans);
+            }
+            else {
+                let result = [ans[0], ans[1]];
+                res.send(result);
+            }
+
+        })
+        .catch(function (err) {
+            res.send(err.message);
+        })
+
+});
+
+router.post('/save', function (req, res) {
 
     const username = req.decoded.payload.UserName;
     let pois = req.body.pois;
@@ -177,7 +247,6 @@ router.put('/review', function (req, res) {
         })
 });
 
-
 router.post('/review/:poiName', function (req, res) {
 
     const username = req.decoded.payload.UserName;
@@ -195,7 +264,6 @@ router.post('/review/:poiName', function (req, res) {
         })
 
 });
-
 
 /****************************************************************
  *                      Rank module
@@ -245,48 +313,9 @@ router.post('/rank', function (req, res) {
  *                      Get module
  ***************************************************************/
 
-router.get("/", function (req, res) {
-
-    //language=SQLite
-    const query = `SELECT *
-                   FROM [POI]`;
-    DButilsAzure.execQuery(query)
-        .then(function (ans) {
-            let result = ansToJson(ans);
-            res.send(result);
-        })
-        .catch(function (err) {
-            console.log(err.message);
-        })
-
-
-});
-
-
-router.get('/userLast2', function (req, res) {
-
-    const username = req.decoded.payload.UserName;
-    //language=SQLite
-    const query = `select [PoiName], [PoiPic], [Category], [Rating], [numOfRanks] from [POI] as p join [SavePOI] as s on p.PoiName = s.poi_name where s.username = '${username}' order by s.date desc`;
-    DButilsAzure.execQuery(query)
-        .then(function (ans) {
-            if (ans.length <= 2) {
-                res.send(ans);
-            }
-            else {
-                let result = [ans[0], ans[1]];
-                res.send(result);
-            }
-
-        })
-        .catch(function (err) {
-            res.send(err.message);
-        })
-
-});
-
 router.get('/category', function (req, res) {
     const username = req.decoded.payload.UserName;
+    const num = req.body.num;
     //language=SQLite
     const getCategoryQuery = `select [FirstCategory], [SecondCategory] from [Users] where [Username] = '${username}'`;
     DButilsAzure.execQuery(getCategoryQuery)
@@ -299,18 +328,14 @@ router.get('/category', function (req, res) {
             //language=SQLite
             const sq = `select * from [POI] where Category = '${second}' order by [numOfRanks] desc`;
             DButilsAzure.execQuery(fq)
-                .then(function (ans)
-                {
-                    if (ans.length >= 1)
-                    {
+                .then(function (ans) {
+                    if (ans.length >= 1) {
                         result.push(ans[0]);
                         //language=SQLite
 
                         DButilsAzure.execQuery(sq)
-                            .then(function (ans)
-                            {
-                                if (ans.length >= 1)
-                                {
+                            .then(function (ans) {
+                                if (ans.length >= 1) {
                                     result.push(ans[0]);
 
                                 }
@@ -320,13 +345,10 @@ router.get('/category', function (req, res) {
                                 res.send(err.message);
                             })
                     }
-                    else
-                    {
+                    else {
                         DButilsAzure.execQuery(sq)
-                            .then(function (ans)
-                            {
-                                if (ans.length >= 1)
-                                {
+                            .then(function (ans) {
+                                if (ans.length >= 1) {
                                     result.push(ans[0]);
 
                                 }
@@ -343,19 +365,7 @@ router.get('/category', function (req, res) {
         })
 });
 
-router.get('/:poiName', function (req, res) {
 
-    const poiName = req.params;
-    //language=SQLite
-    const query = `select * from [PoiInfo] where PoiName = '${poiName}'`;
-    DButilsAzure.execQuery(query)
-        .then(function (ans) {
-            res.send(ans)
-        })
-        .catch(function (err) {
-            res.send(err.message);
-        })
-});
 
 
 module.exports = router;
