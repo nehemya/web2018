@@ -1,10 +1,10 @@
 let express = require('express');
 let bodyParser = require('body-parser');
 let router = express.Router();
-let DButilsAzure = require('./DButils');
+let DButilsAzure = require('../DButils');
 let cors = require('cors');
 let util = require('util');
-DButilsAzure = require('./DButils');
+DButilsAzure = require('../DButils');
 
 
 /* configure body parser */
@@ -53,7 +53,7 @@ router.get('/popular', function (req, res) {
             for (let i = 0; i < 3 && i < ans.length; i++)
             {
                 let index = Math.floor(Math.random() * (max - min + 1)) + min;
-                while (indexes.contains(index))
+                while (indexes.includes(index))
                 {
                     index = Math.floor(Math.random() * (max - min + 1)) + min;
                 }
@@ -71,7 +71,7 @@ router.get('/popular', function (req, res) {
 /* Get All POI or get specific POI*/
 router.get('/', function (req, res) {
 
-    const poiName = req.body.poiName;
+    const poiName = req.query.poiName;
     if ('All' === poiName)
     {
         //language=SQLite
@@ -128,7 +128,7 @@ router.get('/', function (req, res) {
 /* check token */
 router.use('/', function (req, res, next) {
     if (undefined === req.decoded) {
-        res.sendStatus(498)
+        res.sendStatus(401)
     }
     else {
         next();
@@ -183,7 +183,7 @@ router.get('/save/userLast2', function (req, res) {
 
     const username = req.decoded.payload.UserName;
     //language=SQLite
-    const query = `select [PoiName], [PoiPic], [Category], [Rating], [numOfRanks], [nomOfViews], [desc] from [POI] as p join [SavePOI] as s on p.PoiName = s.poi_name where s.username = '${username}' order by s.date desc`;
+    const query = `select [PoiName], [PoiPic], [Category], [Rating], [numOfRanks], [numOfViews], [desc] from [POI] as p join [SavePOI] as s on p.PoiName = s.poi_name where s.username = '${username}' order by s.date desc`;
     DButilsAzure.execQuery(query)
         .then(function (ans) {
             if (ans.length === 0) {
@@ -261,13 +261,29 @@ router.delete('/save/deleteUserOrder', function (req, res) {
 /* saves specific poi*/
 router.post('/save/:poi', function (req, res) {
     const username = req.decoded.payload.UserName;
-    let poiName = req.params;
+    let poiName = req.params.poi;
     let date = new Date().toISOString();
-    //language=SQLite
+    //language=TSQL
     const query = `insert into [SavePOI] ([username], [poi_name], [date]) values ('${username}', '${poiName}', '${date}')`;
-    DButilsAzure.execQuery(query)
-        .then(function () {
-            res.sendStatus(200)
+
+    //language=TSQL
+    const check = `select PoiName from POI`;
+    DButilsAzure.execQuery(check)
+        .then(function (ans) {
+            if (ans.includes(poiName))
+            {
+                DButilsAzure.execQuery(query)
+                    .then(function () {
+                        res.sendStatus(200)
+                    })
+                    .catch(function (err) {
+                        res.send(err.message);
+                    })
+            }
+            else
+            {
+                res.send("The POI doesn't exist")
+            }
         })
         .catch(function (err) {
             res.send(err.message);
@@ -365,82 +381,50 @@ router.post('/rank', function (req, res) {
 router.get('/popularCategory', function (req, res) {
     const username = req.decoded.payload.UserName;
     //language=SQLite
-    const getCategoryQuery = `select [FirstCategory], [SecondCategory], [ThirdCategory], [ForthCategory] from [Users] where [Username] = '${username}'`;
+    const getCategoryQuery = `select [FirstCategory], [SecondCategory], [ThirdCategory], [FourthCategory] from [Users] where [Username] = '${username}'`;
     DButilsAzure.execQuery(getCategoryQuery)
         .then(function (ans) {
-            let result = [];
-            const first = ans[0];
-            const second = ans[1];
-            const third = ans[2];
-            const fourth = ans[3];
+            let category = [];
+            category[0] = ans[0].FirstCategory;
+            category[1] = ans[0].SecondCategory;
+            category[2] = ans[0].ThridCategory;
+            category[3] = ans[0].FourthCategory;
+
             let promises = [];
-            //language=SQLite
-            const fq = `select * from [POI] where Category = '${first}' order by [numOfViews] desc`;
+            //language=TSQL
+            const fq = `select TOP(1) * from [POI] where Category = '${category[0]}' order by [numOfViews]  desc `;
             promises.push(DButilsAzure.execQuery(fq));
-            //language=SQLite
-            const sq = `select * from [POI] where Category = '${second}' order by [numOfViews] desc`;
+            //language=TSQL
+            const sq = `select TOP(1) * from [POI]  where Category = '${category[1]}' order by [numOfViews] desc `;
             promises.push(DButilsAzure.execQuery(sq));
-            if (third !== undefined)
+            if (category[2] !== undefined)
             {
-                //language=SQLite
-                const tq = `select * from [POI] where Category = '${third}' order by [numOfViews] desc`;
+                //language=TSQL
+                const tq = `select TOP(1) * from [POI] where Category = '${category[2]}' order by [numOfViews] desc`;
                 promises.push(DButilsAzure.execQuery(tq));
+
             }
-            if (fourth !== undefined)
+            if (category[3] !== undefined)
             {
-                //language=SQLite
-                const fourthq = `select * from [POI] where Category = '${fourth}' order by [numOfViews] desc`;
+
+                // language=TSQL
+                const fourthq = `select TOP(1) * from [POI] where Category = '${category[4]}' order by [numOfViews] desc`;
                 promises.push(DButilsAzure.execQuery(fourthq));
+
             }
 
             Promise.all(promises)
                 .then(function (ans) {
-                    res.send(ans)
+                   res.send(ans)
                 })
                 .catch(function () {
                     res.send("Can't retrieve POI for category");
                 })
 
-            /*
-            DButilsAzure.execQuery(fq)
-                .then(function (ans1) {
-                    if (ans.length >= 1) {
-                        result.push(ans1[0]);
-                        //language=SQLite
 
-                        DButilsAzure.execQuery(sq)
-                            .then(function (ans2) {
-                                if (ans.length >= 1) {
-                                    result.push(ans[0]);
-                                    if (third !== undefined)
-                                    {
-
-                                    }
-                                }
-                                res.send(result);
-                            })
-                            .catch(function (err) {
-                                res.send(err.message);
-                            })
-                    }
-                    else {
-                        DButilsAzure.execQuery(sq)
-                            .then(function (ans) {
-                                if (ans.length >= 1) {
-                                    result.push(ans[0]);
-
-                                }
-                                res.send(result);
-                            })
-                            .catch(function (err) {
-                                res.send(err.message);
-                            })
-                    }
-                })
-                .catch(function (err) {
-                    res.send(err.message);
-                })
-            */
+        })
+        .catch(function (err) {
+            res.send(err.message);
         })
 });
 
