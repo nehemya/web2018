@@ -28,12 +28,13 @@ router.post('/addUser', function (req, res) {
     const qPass2 = req.body.QPassword2;
     const Answer1 = req.body.Answer1;
     const Answer2 = req.body.Answer2;
-
+    const ThirdCategory = req.body.ThirdCategory;
+    const FourthCategory = req.body.FourthCategory;
 
     // language=SQLite
     const query = `INSERT INTO Users  VALUES ('${firstName}', '${lastName}', '${city}', 
                   '${country}', '${email}', '${firstCategory}', '${secondCategory}', '${qPass1}', '${qPass2}', 
-                   '${username}', '${password}', '${Answer1}', '${Answer2}')`;
+                   '${username}', '${password}', '${Answer1}', '${Answer2}', '${ThirdCategory}', '${FourthCategory} ')`;
     DButilsAzure.execQuery(query)
         .then(function(ans){
             res.sendStatus(200);
