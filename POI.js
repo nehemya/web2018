@@ -21,6 +21,23 @@ function getNext(ans, poiName) {
     }
 }
 
+/****************************************************************
+ *                      For All users module
+ ***************************************************************/
+
+/*Get category*/
+router.get('/category', function (req, res) {
+
+    //language=SQLite
+    const query = `select * from [Category]`;
+    DButilsAzure.execQuery(query)
+        .then(function (ans) {
+            res.send(ans);
+        })
+        .catch(function () {
+            res.send("There a weird problem");
+        })
+});
 
 /*Get popular POI*/
 router.get('/popular', function (req, res) {
@@ -345,7 +362,7 @@ router.post('/rank', function (req, res) {
  *                      Get module
  ***************************************************************/
 /*get popular poi*/
-router.get('/category', function (req, res) {
+router.get('/popularCategory', function (req, res) {
     const username = req.decoded.payload.UserName;
     //language=SQLite
     const getCategoryQuery = `select [FirstCategory], [SecondCategory], [ThirdCategory], [ForthCategory] from [Users] where [Username] = '${username}'`;
