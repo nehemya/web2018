@@ -75,7 +75,7 @@ router.get('/', function (req, res) {
     if ('All' === poiName)
     {
         //language=SQLite
-        const query = "select [PoiName] from [POI]";
+        const query = "select * from [POI]";
         DButilsAzure.execQuery(query)
             .then(function (ans) {
                 res.send(ans);
