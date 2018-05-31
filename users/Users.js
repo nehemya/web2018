@@ -12,7 +12,7 @@ router.use(bodyParser.urlencoded({extended: true}));
 router.use(bodyParser.json());
 router.use(cors());
 
-/* adding user */
+/* adding user  */
 router.post('/addUser', function (req, res) {
 
     const username = req.body.UserName;
