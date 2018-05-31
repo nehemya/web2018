@@ -65,8 +65,8 @@ router.post('/login', function (req, res) {
 
 })
 /*get questions to restore password*/
-router.get('/getQuestions', function (req, res) {
-    const user = req.headers.username;
+router.get('/getQuestions/:username', function (req, res) {
+    const user = req.params.username;
     // language=SQLite
     const query = `SELECT * FROM [Users] WHERE [Username] = '${user}'`;
     DButilsAzure.execQuery(query)
