@@ -12,7 +12,7 @@ router.use(bodyParser.urlencoded({extended: true}));
 router.use(bodyParser.json());
 router.use(cors());
 
-/* adding user */
+/* adding user  */
 router.post('/addUser', function (req, res) {
 
     const username = req.body.UserName;
@@ -63,8 +63,8 @@ router.post('/login', function (req, res) {
 
 })
 /*get questions to restore password*/
-router.get('/getQuestions', function (req, res) {
-    const user = req.headers.username;
+router.get('/getQuestions/:username', function (req, res) {
+    const user = req.params.username;
     // language=SQLite
     const query = `SELECT * FROM [Users] WHERE [Username] = '${user}'`;
     DButilsAzure.execQuery(query)
