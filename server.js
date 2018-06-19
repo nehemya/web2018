@@ -52,11 +52,14 @@ app.use(function(req, res, next){
 app.use('/Users', users);
 app.use('/POI', poi);
 
+app.get('/countries', function (req, res) {
+    res.send(countries);
+});
+
 
 /* start listening */
 app.listen(port, function () {
     console.log('Server listening on port ' + port);
 });
 //-------------------------------------------------------------------------------------------------------------------
-
 

@@ -121,6 +121,7 @@ router.get('/', function (req, res) {
 
 
 
+
 /****************************************************************
  *                      Use module
  ***************************************************************/
@@ -212,7 +213,7 @@ router.post('/save', function (req, res) {
     let promises = [];
 
     for (let i = 0; i < pois.length; i++) {
-        let poiName = pois[i].poiName;
+        let poiName = pois[i].PoiName;
         let place = pois[i].place;
         //language=SQLite
         let insert = `update [SavePOI] set place = '${place}' where username = '${username}' and poi_name = '${poiName}'`;
