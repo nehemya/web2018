@@ -39,7 +39,20 @@ router.post('/addUser', function (req, res) {
             res.sendStatus(200);
         })
         .catch(function (err) {
-            res.send('please choose different username');
+          if (err.message.includes("Email"))
+          {
+              res.send("This email is already taken");
+          }
+          else if (err.message.includes("PRIMARY"))
+          {
+              res.send("This username is already taken");
+          }
+          else
+          {
+              res.send("Oops. Something went wrong");
+          }
+
+
         })
 
 

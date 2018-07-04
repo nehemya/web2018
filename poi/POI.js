@@ -160,7 +160,7 @@ router.get('/save', function (req, res) {
                     sorted = ans.sort(function (a, b) {
                         return (a.place > b.place) ? 1 : (a.place < b.place) ? -1 : 0;
                     });
-                    let result = [sorted.length];
+                    let result = [];
                     for (let i = 0; i < sorted.length; i++) {
                         result[i] = getNext(pois, sorted[i].poi_name);
                     }
@@ -263,28 +263,31 @@ router.delete('/save/deleteUserOrder', function (req, res) {
 router.post('/save/:poi', function (req, res) {
     const username = req.decoded.payload.UserName;
     let poiName = req.params.poi;
-    let date = new Date().toISOString();
+    let place = req.body.place;
+    let date = req.body.date;
     //language=TSQL
-    const query = `insert into [SavePOI] ([username], [poi_name], [date]) values ('${username}', '${poiName}', '${date}')`;
+    const query = `insert into [SavePOI] values ('${username}', '${poiName}', '${place}', '${date}')`;
 
     //language=TSQL
     const check = `select PoiName from POI`;
     DButilsAzure.execQuery(check)
         .then(function (ans) {
-            if (ans.includes(poiName))
+            for (let i = 0; i < ans.length; i++)
             {
-                DButilsAzure.execQuery(query)
-                    .then(function () {
-                        res.sendStatus(200)
-                    })
-                    .catch(function (err) {
-                        res.send(err.message);
-                    })
+                let name = ans[i].PoiName;
+                if (name === poiName)
+                {
+                    DButilsAzure.execQuery(query)
+                        .then(function () {
+                            res.sendStatus(200)
+                        })
+                        .catch(function (err) {
+                            res.send(err.message);
+                        })
+                }
             }
-            else
-            {
-                res.send("The POI doesn't exist")
-            }
+            res.send("The POI doesn't exist")
+
         })
         .catch(function (err) {
             res.send(err.message);
