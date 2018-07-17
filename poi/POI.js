@@ -248,14 +248,19 @@ router.delete('/save', function (req, res) {
 /*delete the order saved. all place set to 0*/
 router.delete('/save/deleteUserOrder', function (req, res) {
     const username = req.decoded.payload.UserName;
+    //language=TSQL
+    const sql = `delete from SavePOI where username = '${username}'`;
+    /*
     //language=SQLite
     const query = `update [SavePOI] set [place] = 0 where username = '${username}'`;
-    DButilsAzure.execQuery(query)
+    */
+
+    DButilsAzure.execQuery(sql)
         .then(function () {
             res.sendStatus(200)
         })
         .catch(function (err) {
-            res.send(err.message)
+            res.send("Oops. Something went wrong")
         })
 });
 
@@ -282,7 +287,7 @@ router.post('/save/:poi', function (req, res) {
                             res.sendStatus(200)
                         })
                         .catch(function (err) {
-                            res.send(err.message);
+                            res.sendStatus();
                         })
                 }
             }
@@ -290,7 +295,7 @@ router.post('/save/:poi', function (req, res) {
 
         })
         .catch(function (err) {
-            res.send(err.message);
+            res.send(err.message.toString());
         })
 
 });
@@ -312,7 +317,7 @@ router.put('/review', function (req, res) {
             res.sendStatus(200);
         })
         .catch(function (err) {
-            res.send(err.message);
+            res.send(err.message.toString());
         })
 });
 /*post a review*/
@@ -329,7 +334,7 @@ router.post('/review', function (req, res) {
             res.sendStatus(200)
         })
         .catch(function (err) {
-            res.send(err.message);
+            res.send(err.message.toString());
         })
 
 });
@@ -363,16 +368,16 @@ router.post('/rank', function (req, res) {
                             res.sendStatus(200)
                         })
                         .catch(function (err) {
-                            res.send(err.message)
+                            res.send(err.message.toString())
                         })
                 })
                 .catch(function (err) {
-                    res.send(err.message)
+                    res.send(err.message.toString())
                 })
 
         })
         .catch(function (err) {
-            res.send(err.message);
+            res.send(err.message.toString());
         })
 
 
@@ -428,7 +433,7 @@ router.get('/popularCategory', function (req, res) {
 
         })
         .catch(function (err) {
-            res.send(err.message);
+            res.send(err.message.toString());
         })
 });
 
